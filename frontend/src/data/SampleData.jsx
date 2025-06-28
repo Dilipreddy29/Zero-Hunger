@@ -46,6 +46,20 @@ const volunteerFAQs = [
   }
 ];
 
+const weeklyDeliveries = [
+  { week: 'Week 1', deliveries: 18 },
+  { week: 'Week 2', deliveries: 24 },
+  { week: 'Week 3', deliveries: 21 },
+  { week: 'Week 4', deliveries: 27 }
+];
+
+const foodTypeDistribution = [
+  { name: "Cooked Meals", value: 40, fill: "#3B82F6" },
+  { name: "Fruits", value: 25, fill: "#10B981" },
+  { name: "Packaged Food", value: 20, fill: "#F59E0B" },
+  { name: "Bakery", value: 15, fill: "#EF4444" }
+];
+
 // Helper Component for Status Tag
 function StatusTag({ status }) {
   const bgColor = status === 'Pending' ? '#facc15'
@@ -141,7 +155,7 @@ function FAQs() {
 }
 
 // Main Component
-export default function DashboardDemo() {
+function DashboardDemo() {
   return (
     <div style={{ padding: '24px', fontFamily: 'sans-serif' }}>
       <DonorTable />
@@ -150,3 +164,12 @@ export default function DashboardDemo() {
     </div>
   );
 }
+
+export {
+  donorData,
+  monthlyDeliveries,
+  weeklyDeliveries,
+  foodTypeDistribution,
+  volunteerFAQs
+};
+

@@ -14,12 +14,8 @@ export default function LandingPage() {
           <nav className="space-x-10 text-base font-medium">
             <a href="/tasks" className="hover:text-blue-600">Tasks</a>
             <a href="/login" className="hover:text-blue-600">Login</a>
-            <a
-              href="/donorform"
-              className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
-            >
-              Donate
-            </a>
+            <a href="/dashboard" className="hover:text-blue-600">Volunteer Dashboard</a>
+            <a href="/register" className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">Register</a>
           </nav>
         </div>
       </header>
@@ -33,12 +29,7 @@ export default function LandingPage() {
           <p className="text-xl text-gray-600 mb-10 max-w-4xl mx-auto">
             Join a community of volunteers helping NGOs reach people faster. Register today and start making a difference.
           </p>
-          <a
-            href="/register"
-            className="bg-green-600 text-white px-8 py-4 rounded-full text-lg hover:bg-green-700"
-          >
-            Register as Volunteer
-          </a>
+          <a href="/donorform" className="bg-green-600 text-white px-8 py-4 rounded-full text-lg hover:bg-green-700">Donate Now</a>
         </section>
       </main>
 

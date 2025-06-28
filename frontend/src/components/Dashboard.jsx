@@ -5,7 +5,7 @@ import DeliveryCharts from './DeliveryCharts';
 import VolunteerResources from './VolunteerResources';
 import StatsCards from './StatsCards';
 
-
+import { donorData, monthlyDeliveries, volunteerFAQs, weeklyDeliveries, foodTypeDistribution } from '../data/SampleData';
 const Dashboard = () => {
   const totalDeliveries = 127; // Hardcoded total deliveries count
 
@@ -33,7 +33,30 @@ const Dashboard = () => {
       </div>
 
       {/* Main Content */}
-      
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Stats Cards */}
+        <StatsCards donorData={donorData} totalDeliveries={totalDeliveries} />
+
+        {/* Charts Section */}
+        <div className="mb-8">
+          <DeliveryCharts
+  monthlyData={monthlyDeliveries ?? []}
+  weeklyData={weeklyDeliveries ?? []}
+  foodTypeData={foodTypeDistribution ?? []}
+/>
+
+        </div>
+
+        {/* Table and Resources Section */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+          <div className="xl:col-span-2">
+            <DonorTable data={donorData} />
+          </div>
+          <div>
+            <VolunteerResources faqs={volunteerFAQs} />
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
