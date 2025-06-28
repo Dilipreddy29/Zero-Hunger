@@ -1,9 +1,30 @@
-import AdminDashboard from './components/AdminDashboard.jsx';
 
-export default function App() {
+
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import AdminDashboard from './components/AdminDashboard.jsx';
+import DonorForm from './components/DonorForm';
+import LandingPage from './components/LandingPage';
+import Register from './components/Register';
+import LoginForm from './components/LoginForm';
+import Tasks from './components/Tasks'; 
+import Dashboard from './components/Dashboard';
+
+
+function App() {
   return (
-    <>
-      <AdminDashboard />
-    </>
+    <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/login" element={<LoginForm />} />
+            <Route path="/donorform" element={<DonorForm />} />
+            <Route path="/tasks" element={<Tasks />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/adminDashboard" element={<AdminDashboard/>}
+          </Routes>
+    </BrowserRouter>
   );
 }
+
+export default App;
+
