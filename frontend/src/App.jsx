@@ -1,18 +1,25 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
-import DonorForm from './components/DonorForm.jsx'
-import { requestPushPermission } from "./helper/requestPushPermission.js";
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import DonorForm from './components/DonorForm';
+import LandingPage from './components/LandingPage';
+import Register from './components/Register';
+import LoginForm from './components/LoginForm';
+import Tasks from './components/Tasks'; 
+import Dashboard from './components/Dashboard';
+
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-    <DonorForm />
-    </>
-  )
+    <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/login" element={<LoginForm />} />
+            <Route path="/donorform" element={<DonorForm />} />
+            <Route path="/tasks" element={<Tasks />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+          </Routes>
+    </BrowserRouter>
+  );
 }
 
-export default App
+export default App;
