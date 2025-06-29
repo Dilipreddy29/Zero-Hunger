@@ -1,4 +1,7 @@
+
+
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import AdminDashboard from './components/AdminDashboard.jsx';
 import DonorForm from './components/DonorForm';
 import LandingPage from './components/LandingPage';
 import Register from './components/Register';
@@ -17,9 +20,11 @@ function App() {
             <Route path="/donorform" element={<DonorForm />} />
             <Route path="/tasks" element={<Tasks />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/adminDashboard" element={<AdminDashboard/>}
           </Routes>
     </BrowserRouter>
   );
 }
 
 export default App;
+
