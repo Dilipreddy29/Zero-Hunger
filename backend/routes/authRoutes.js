@@ -1,23 +1,11 @@
 const express = require('express');
 const router = express.Router();
+const passport = require('passport');
 const { registerVolunteer, loginUser } = require('../controllers/authController');
 
-// Register
-router.post('/register', registerUser);
+router.post('/register', registerVolunteer);
 
-// Email Verification
-router.get('/verify-email/:token', verifyEmail);
-
-// Login
 router.post('/login', loginUser);
-
-// Logout
-router.get('/logout', logoutUser);
-
-router.post('/forgot-password', forgotPassword);
-
-router.post('/reset-password/:token', resetPassword);
-
 
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 

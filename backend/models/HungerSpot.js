@@ -16,4 +16,6 @@ const HungerSpotSchema = new Schema({
   createdAt: { type: Date, default: Date.now },
 });
 
+HungerSpotSchema.index({ location: '2dsphere' });
+
 module.exports = mongoose.model('HungerSpot', HungerSpotSchema);

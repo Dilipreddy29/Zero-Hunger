@@ -1,7 +1,6 @@
 const HungerSpot = require('../models/HungerSpot');
-const Admin = require('../models/Admin');
 
-
+// @desc    Get all hunger spots
 exports.getHungerSpots = async (req, res) => {
   try {
     const spots = await HungerSpot.find({});
@@ -11,9 +10,11 @@ exports.getHungerSpots = async (req, res) => {
   }
 };
 
+// @desc    Get nearby hunger spots
 exports.getNearbyHungerSpots = async (req, res) => {
   try {
     const { lat, lng } = req.query;
+
     const spots = await HungerSpot.find({
       location: {
         $near: {
@@ -25,6 +26,7 @@ exports.getNearbyHungerSpots = async (req, res) => {
         },
       },
     });
+
     res.json(spots);
   } catch (error) {
     res.status(500).json({ message: 'Server Error' });
@@ -32,7 +34,6 @@ exports.getNearbyHungerSpots = async (req, res) => {
 };
 
 // @desc    Create a new hunger spot
-// @route   POST /api/hunger-spots
 // @access  Private (Admin)
 exports.createHungerSpot = async (req, res) => {
   try {
@@ -42,9 +43,19 @@ exports.createHungerSpot = async (req, res) => {
       contactPerson,
       phone,
       address,
-      location,
+      latitude,
+      longitude,
       capacity,
     } = req.body;
+
+    if (!latitude || !longitude) {
+      return res.status(400).json({ message: 'Latitude and longitude are required' });
+    }
+
+    const location = {
+      type: 'Point',
+      coordinates: [longitude, latitude],
+    };
 
     const spot = new HungerSpot({
       name,
@@ -54,12 +65,13 @@ exports.createHungerSpot = async (req, res) => {
       address,
       location,
       capacity,
-      createdBy: req.user._id, // Assuming admin user is available in req.user
+      createdBy: req.user._id,
     });
 
     const createdSpot = await spot.save();
     res.status(201).json(createdSpot);
   } catch (error) {
+    console.error("Error creating hunger spot:", error);
     res.status(500).json({ message: 'Server Error' });
   }
 };

@@ -1,9 +1,3 @@
-const DonationRequest = require('../models/DonationRequest');
-const User = require('../models/User');
-
-const DonationRequest = require('../models/DonationRequest');
-const User = require('../models/User');
-const VolunteerAssignmentLog = require('../models/VolunteerAssignmentLog');
 
 const DonationRequest = require('../models/DonationRequest');
 const User = require('../models/User');
@@ -21,6 +15,8 @@ exports.createDonation = async (req, res) => {
       quantity,
       type,
       pickupAddress,
+      donorName,
+      donorPhone,
       location,
       preferredPickupTime,
       expiryTime,
@@ -72,7 +68,7 @@ exports.createDonation = async (req, res) => {
 
         const timeToPickup = await getETA(volunteerLocation, donorLocation);
         const timeToDeliver = await getETA(donorLocation, spotLocation);
-        const totalTime = timeToPickup + timeToDeliver + 5; // 5 min buffer
+        const totalTime = timeToPickup + timeToDeliver + 5; 
 
         if (totalTime <= 45) {
           eligibleMatches.push({
@@ -94,6 +90,12 @@ exports.createDonation = async (req, res) => {
     });
 
     const bestMatch = eligibleMatches.length > 0 ? eligibleMatches[0] : null;
+    if (!bestMatch) {
+  return res.status(200).json({
+    message: 'We could not assign any volunteer currently. Your request is pending. Please wait or try again later.',
+    status: 'pending'
+  });
+}
 
     const donation = new DonationRequest({
       donorId: req.user._id,
@@ -106,6 +108,8 @@ exports.createDonation = async (req, res) => {
       expiryTime,
       images,
       status: 'pending',
+      donorName,
+      donorPhone,
     });
 
     if (bestMatch) {
