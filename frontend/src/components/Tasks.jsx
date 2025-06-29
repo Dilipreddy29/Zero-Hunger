@@ -1,127 +1,101 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 export default function Tasks() {
-  const volunteer = {
-    name: "Arjun Rao",
-    contact: "+91-9876543210",
-    email: "arjun.rao@ngo.org",
-    location: "17.4201,78.4483", // Simulated lat,lon
-    availability: "9 AM - 6 PM",
-  };
+  const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
-  const assignedDonation = {
-    donorName: "Varsha Reddy",
-    address: "17.4299,78.4532", // Donor's lat,lon
-    foodType: "Rice & Veg Curry",
-    quantity: 20,
-    shelter: "Shelter A, Jubilee Hills",
-    etaMinutes: 15, // Simulated ETA
-  };
-
-  const [showRequest, setShowRequest] = useState(true);
-  const [accepted, setAccepted] = useState(false);
-  const [countdown, setCountdown] = useState(assignedDonation.etaMinutes * 60); // in seconds
-  const [showProgress, setShowProgress] = useState(false);
-
-  const handleAccept = () => {
-    setAccepted(true);
-    setShowRequest(false);
-    setShowProgress(true);
-
-    // Open route in Google Maps
-    const mapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${volunteer.location}&destination=${assignedDonation.address}&travelmode=driving`;
-    window.open(mapsUrl, "_blank");
-  };
-
-  // Countdown timer
   useEffect(() => {
-    if (!showProgress || countdown <= 0) return;
+    const fetchTasks = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          navigate("/login");
+          return;
+        }
 
-    const timer = setInterval(() => {
-      setCountdown((prev) => prev - 1);
-    }, 1000);
+        const response = await fetch("/api/volunteer/tasks", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
-    return () => clearInterval(timer);
-  }, [showProgress, countdown]);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
 
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+        const data = await response.json();
+        setTasks(data);
+      } catch (error) {
+        setError(error);
+        console.error("Error fetching tasks:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTasks();
+  }, [navigate]);
+
+  const handleAccept = (task) => {
+    // In a real application, you'd send an API call to accept the task
+    // For now, we'll just open the map link
+    if (task.googleMapsLink) {
+      window.open(task.googleMapsLink, "_blank");
+    } else {
+      alert("No map link available for this task.");
+    }
   };
 
-  const progressPercent = 100 - (countdown / (assignedDonation.etaMinutes * 60)) * 100;
+  if (loading) {
+    return <div className="min-h-screen bg-[#FFF8F0] text-[#4E342E] font-sans p-6">Loading tasks...</div>;
+  }
+
+  if (error) {
+    return <div className="min-h-screen bg-[#FFF8F0] text-[#4E342E] font-sans p-6">Error: {error.message}</div>;
+  }
 
   return (
     <div className="min-h-screen bg-[#FFF8F0] text-[#4E342E] font-sans p-6">
       <header className="bg-[#F57C00] text-white py-4 px-6 shadow-md">
-        <h1 className="text-2xl font-bold">Volunteer Dashboard</h1>
+        <h1 className="text-2xl font-bold">Volunteer Tasks</h1>
       </header>
 
       <section className="max-w-4xl mx-auto bg-white mt-6 p-6 rounded shadow">
-        <h2 className="text-xl font-bold text-[#FB8C00] mb-4">Welcome, {volunteer.name}</h2>
-        <div className="grid md:grid-cols-2 gap-4 mb-4">
-          <p><strong>Email:</strong> {volunteer.email}</p>
-          <p><strong>Phone:</strong> {volunteer.contact}</p>
-          <p><strong>Location:</strong> {volunteer.location}</p>
-          <p><strong>Availability:</strong> {volunteer.availability}</p>
-        </div>
+        <h2 className="text-xl font-bold text-[#FB8C00] mb-4">Your Assigned Tasks</h2>
+        {tasks.length === 0 ? (
+          <p>No tasks assigned to you at the moment.</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {tasks.map((task) => (
+              <div key={task._id} className="bg-gray-100 p-4 rounded shadow-sm">
+                <h3 className="text-lg font-semibold text-[#F57C00] mb-2">Donation Request</h3>
+                <p><strong>Donor:</strong> {task.donorName}</p>
+                <p><strong>Food:</strong> {task.foodDescription}</p>
+                <p><strong>Quantity:</strong> {task.quantity}</p>
+                <p><strong>Pickup Address:</strong> {task.pickupAddress}</p>
+                {task.deliveredTo && (
+                  <>
+                    <p><strong>Deliver To:</strong> {task.deliveredTo.name}</p>
+                    <p><strong>Shelter Address:</strong> {task.deliveredTo.address}</p>
+                  </>
+                )}
+                <p><strong>Status:</strong> {task.status}</p>
+                {task.googleMapsLink && (
+                  <button
+                    onClick={() => handleAccept(task)}
+                    className="mt-4 bg-[#66BB6A] text-white px-4 py-2 rounded hover:bg-[#43A047]"
+                  >
+                    View on Map
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </section>
-
-      {/* Accept/Reject Popup */}
-      {showRequest && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full text-center">
-            <h3 className="text-2xl font-bold text-[#F57C00] mb-2">New Donation Request</h3>
-            <p className="mb-2">🍱 Donor: {assignedDonation.donorName}</p>
-            <p className="mb-2">📍 Pickup: {assignedDonation.address}</p>
-            <p className="mb-2">🏥 Shelter: {assignedDonation.shelter}</p>
-            <p className="mb-4">ETA: {assignedDonation.etaMinutes} min</p>
-            <div className="space-x-4">
-              <button
-                onClick={handleAccept}
-                className="bg-[#66BB6A] text-white px-4 py-2 rounded hover:bg-[#43A047]"
-              >
-                Accept
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Show Accepted Details */}
-      {accepted && (
-        <section className="max-w-4xl mx-auto bg-white mt-6 p-6 rounded shadow space-y-3">
-          <h3 className="text-xl font-bold text-[#F57C00] mb-2">Accepted Donation</h3>
-          <p><strong>Donor:</strong> {assignedDonation.donorName}</p>
-          <p><strong>Pickup Address (coords):</strong> {assignedDonation.address}</p>
-          <p><strong>Food Type:</strong> {assignedDonation.foodType}</p>
-          <p><strong>Quantity:</strong> {assignedDonation.quantity} people</p>
-          <p><strong>Shelter:</strong> {assignedDonation.shelter}</p>
-          <p><strong>ETA:</strong> {assignedDonation.etaMinutes} min</p>
-        </section>
-      )}
-
-      {/* ETA Progress */}
-      {showProgress && countdown > 0 && (
-        <div className="max-w-4xl mx-auto bg-white mt-6 p-6 rounded shadow">
-          <h3 className="text-lg font-semibold text-[#FB8C00] mb-2">On the Way</h3>
-          <p>Time Left: <strong>{formatTime(countdown)}</strong></p>
-          <div className="w-full bg-gray-300 rounded-full h-4 mt-2">
-            <div
-              className="bg-[#F57C00] h-4 rounded-full transition-all duration-1000"
-              style={{ width: `${progressPercent}%` }}
-            ></div>
-          </div>
-        </div>
-      )}
-
-      {/* Delivery done message */}
-      {accepted && countdown <= 0 && (
-        <div className="max-w-4xl mx-auto bg-green-100 text-green-800 p-4 mt-6 rounded shadow text-center font-medium">
-          🎉 Delivery Completed Successfully!
-        </div>
-      )}
     </div>
   );
 }

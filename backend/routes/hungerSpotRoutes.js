@@ -9,7 +9,7 @@ const { protect, admin } = require('../middleware/authMiddleware');
 
 router.route('/')
   .get(getHungerSpots)
-  .post(protect, createHungerSpot); // ✅ Fix: add `protect` before `admin`
+  .post(protect, createHungerSpot); 
 
 router.route('/nearby')
   .get(getNearbyHungerSpots);

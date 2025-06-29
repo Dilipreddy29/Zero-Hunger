@@ -4,9 +4,22 @@ const VolunteerAssignmentLog = require('../models/VolunteerAssignmentLog');
 
 exports.getMyTasks = async (req, res) => {
   try {
-    const tasks = await DonationRequest.find({ assignedVolunteer: req.user._id });
-    res.json(tasks);
+    const tasks = await DonationRequest.find({ assignedVolunteer: req.user._id })
+      .populate('deliveredTo'); // Populate the HungerSpot details
+
+    const tasksWithMapLinks = tasks.map(task => {
+      if (task.deliveredTo && task.deliveredTo.location && task.deliveredTo.location.coordinates) {
+        const [longitude, latitude] = task.deliveredTo.location.coordinates;
+        const address = encodeURIComponent(task.deliveredTo.address || '');
+        const googleMapsLink = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}&query_place_id=${address}`;
+        return { ...task.toObject(), googleMapsLink };
+      }
+      return task.toObject();
+    });
+
+    res.json(tasksWithMapLinks);
   } catch (error) {
+    console.error(error); // Log the error for debugging
     res.status(500).json({ message: 'Server Error' });
   }
 };

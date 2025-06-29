@@ -1,14 +1,18 @@
 import React, { useState } from "react";
-import { createDonation } from '../apiService';
+import { createDonation } from "../apiService";
 
 export default function DonorForm() {
   const [formData, setFormData] = useState({
     donorName: "",
-    foodDescription: "", // Changed from description
+    foodDescription: "",
     quantity: "",
-    contactPhone: "",
+    donorPhone: "", // FIXED: was "donorPhone"
     location: "", // Will be converted to { type: 'Point', coordinates: [lng, lat] }
-    pickupAddress: "",  // Changed from address
+    pickupAddress: "",
+    type: "veg",
+    preferredPickupTime: "",
+    expiryTime: "",
+    images: [],
   });
 
   const [status] = useState("pending");
@@ -43,7 +47,7 @@ export default function DonorForm() {
           const data = await response.json();
           setFormData((prev) => ({
             ...prev,
-            address: data.display_name || `${lat}, ${lng}`,
+            pickupAddress: data.display_name || `${lat}, ${lng}`, // FIXED: use correct key
             location: `${lat}, ${lng}`,
           }));
         } catch (_err) {
@@ -61,7 +65,6 @@ export default function DonorForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
 
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
@@ -70,15 +73,18 @@ export default function DonorForm() {
         const donationData = {
           ...formData,
           location: {
-            type: 'Point',
-            coordinates: [parseFloat(lng), parseFloat(lat)], // Backend expects [lng, lat]
+            type: "Point",
+            coordinates: [parseFloat(lng), parseFloat(lat)],
           },
           status,
-          volunteerId: null, // This will be assigned by the backend
-          type: 'cooked', // Defaulting to 'cooked' as it's a required field in backend
-          preferredPickupTime: new Date().toISOString(), // Placeholder
-          expiryTime: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(), // Placeholder: 2 hours from now
-          images: [], // Placeholder
+          volunteerId: null,
+          preferredPickupTime: formData.preferredPickupTime
+            ? new Date(formData.preferredPickupTime).toISOString()
+            : new Date().toISOString(),
+          expiryTime: formData.expiryTime
+            ? new Date(formData.expiryTime).toISOString()
+            : new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
+          images: formData.images,
         };
 
         try {
@@ -86,13 +92,18 @@ export default function DonorForm() {
           const { message, volunteerName, volunteerPhone } = response.data;
 
           if (volunteerName && volunteerPhone) {
-            alert(`Order is placed. Volunteer: ${volunteerName}, Phone: ${volunteerPhone}. We will update you when the volunteer reaches you.`);
+            alert(
+              `Order is placed. Volunteer: ${volunteerName}, Phone: ${volunteerPhone}.`
+            );
           } else {
             alert(message);
           }
         } catch (error) {
-          console.error('Error submitting donation:', error);
-          alert(error.response?.data?.error || 'An error occurred while submitting your donation.');
+          console.error("Error submitting donation:", error);
+          alert(
+            error.response?.data?.error ||
+              "An error occurred while submitting your donation."
+          );
         }
       },
       (error) => {
@@ -110,7 +121,9 @@ export default function DonorForm() {
 
       <div className="max-w-3xl mx-auto bg-white mt-8 p-6 rounded shadow">
         <form onSubmit={handleSubmit} className="grid gap-5">
-          <h2 className="text-xl font-bold text-[#0069fb] mb-1 text-center">Donor Information</h2>
+          <h2 className="text-xl font-bold text-[#0069fb] mb-1 text-center">
+            Donor Information
+          </h2>
 
           <div>
             <label className="block text-sm font-medium mb-1">Your Name</label>
@@ -127,8 +140,8 @@ export default function DonorForm() {
           <div>
             <label className="block text-sm font-medium mb-1">Phone Number</label>
             <input
-              name="contactPhone"
-              value={formData.contactPhone}
+              name="donorPhone"
+              value={formData.donorPhone}
               onChange={handleChange}
               placeholder="Enter your phone number"
               className="border p-2 rounded w-full"
@@ -136,10 +149,14 @@ export default function DonorForm() {
             />
           </div>
 
-          <h2 className="text-xl font-bold text-[#007dfb] mt-2 text-center">Donation Details</h2>
+          <h2 className="text-xl font-bold text-[#007dfb] mt-2 text-center">
+            Donation Details
+          </h2>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Food Description</label>
+            <label className="block text-sm font-medium mb-1">
+              Food Description
+            </label>
             <textarea
               name="foodDescription"
               value={formData.foodDescription}
@@ -152,7 +169,9 @@ export default function DonorForm() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Quantity (People Served)</label>
+            <label className="block text-sm font-medium mb-1">
+              Quantity (People Served)
+            </label>
             <input
               type="number"
               name="quantity"
@@ -164,9 +183,73 @@ export default function DonorForm() {
             />
           </div>
 
+          <div>
+            <label className="block text-sm font-medium mb-1">Food Type</label>
+            <select
+              name="type"
+              value={formData.type}
+              onChange={handleChange}
+              className="border p-2 rounded w-full"
+              required
+            >
+              <option value="veg">Vegetarian</option>
+              <option value="non-veg">Non-Vegetarian</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              Preferred Pickup Time
+            </label>
+            <input
+              type="datetime-local"
+              name="preferredPickupTime"
+              value={formData.preferredPickupTime}
+              onChange={handleChange}
+              className="border p-2 rounded w-full"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Expiry Time</label>
+            <input
+              type="datetime-local"
+              name="expiryTime"
+              value={formData.expiryTime}
+              onChange={handleChange}
+              className="border p-2 rounded w-full"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              Images (comma-separated URLs)
+            </label>
+            <input
+              type="text"
+              name="images"
+              value={formData.images.join(",")}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  images: e.target.value
+                    .split(",")
+                    .map((url) => url.trim())
+                    .filter(Boolean),
+                }))
+              }
+              placeholder="https://example.com/img1.jpg, https://example.com/img2.jpg"
+              className="border p-2 rounded w-full"
+            />
+          </div>
+
           {formData.location && (
             <div>
-              <label className="block text-sm font-medium mb-1">Your Location</label>
+              <label className="block text-sm font-medium mb-1">
+                Your Location (Lat,Lng)
+              </label>
               <input
                 type="text"
                 value={formData.location}
@@ -211,6 +294,7 @@ export default function DonorForm() {
           </button>
         </form>
       </div>
+
       <footer className="text-center text-sm text-gray-600 mt-8">
         &copy; {new Date().getFullYear()} Food Donation. All rights reserved.
       </footer>

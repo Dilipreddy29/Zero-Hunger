@@ -1,6 +1,7 @@
 const DonationRequest = require('../models/DonationRequest');
 const User = require('../models/User');
 const VolunteerAssignmentLog = require('../models/VolunteerAssignmentLog');
+const { sendWhatsApp } = require('./whatsappController');
 
 // @desc    Create a new donation request (NO AUTH)
 // @route   POST /api/donations
@@ -61,6 +62,15 @@ exports.createDonation = async (req, res) => {
       });
 
       await assignment.save();
+
+      // Send WhatsApp message to donor
+      const donorMessage = `Hi ${donorName},
+Your donation of ${foodDescription} (${quantity} ${type}) has been placed.
+Volunteer ${availableVolunteer.name} (${availableVolunteer.phone}) has been assigned for pickup.
+Thank you for your contribution!`;
+
+      // Assuming donorPhone is in a format Twilio expects (e.g., with country code)
+      await sendWhatsApp(donorPhone, donorMessage);
     }
 
     // ✅ Send response

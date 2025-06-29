@@ -1,7 +1,7 @@
 // src/helpers/requestPushPermission.js
 import { getToken } from "firebase/messaging";
 import { messaging } from "../firebase";
-// import apiService from "../services/api";
+import apiService from "../apiService";
 
 const VAPID_KEY = "BBfC0XxWxTH6ZpHKeHz88qWWAo7xV_1ObDpVS9u3rkCeIeSZNoHv2dOE1jGWf3KHkV9evM6HkmBWqrqqqtubGAg"; // ⚠️ Replace this
 

@@ -3,6 +3,7 @@ import { registerUser } from '../apiService';
 import { useNavigate } from 'react-router-dom';
 
 export default function Register() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
