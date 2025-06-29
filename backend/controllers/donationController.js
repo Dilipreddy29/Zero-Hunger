@@ -1,13 +1,9 @@
-
 const DonationRequest = require('../models/DonationRequest');
 const User = require('../models/User');
-const HungerSpot = require('../models/HungerSpot');
 const VolunteerAssignmentLog = require('../models/VolunteerAssignmentLog');
-const { getETA } = require('../utils/openRouteService');
 
-// @desc    Create a new donation request
+// @desc    Create a new donation request (NO AUTH)
 // @route   POST /api/donations
-// @access  Private (Donor)
 exports.createDonation = async (req, res) => {
   try {
     const {
@@ -23,82 +19,22 @@ exports.createDonation = async (req, res) => {
       images,
     } = req.body;
 
-    if (!location || !location.coordinates || location.coordinates.length !== 2) {
+    // ✅ Validate location format
+    if (!location?.coordinates || location.coordinates.length !== 2) {
       return res.status(400).json({ message: 'Invalid location data' });
     }
 
-    const donorLocation = {
-      lat: location.coordinates[1],
-      lng: location.coordinates[0],
-    };
-
-    const hungerSpots = await HungerSpot.find({
-      location: {
-        $near: {
-          $geometry: { type: 'Point', coordinates: [donorLocation.lng, donorLocation.lat] },
-          $maxDistance: 10000, // 10km
-        },
-      },
-    });
-
-    const volunteers = await User.find({
+    // ✅ Find any available volunteer
+    const availableVolunteer = await User.findOne({
       role: 'volunteer',
       isVerified: true,
       available: true,
-      location: {
-        $near: {
-          $geometry: { type: 'Point', coordinates: [donorLocation.lng, donorLocation.lat] },
-          $maxDistance: 8000, // 8km
-        },
-      },
     });
 
-    let eligibleMatches = [];
-
-    for (const spot of hungerSpots) {
-      for (const vol of volunteers) {
-        const volunteerLocation = {
-          lat: vol.location.coordinates[1],
-          lng: vol.location.coordinates[0],
-        };
-        const spotLocation = {
-          lat: spot.location.coordinates[1],
-          lng: spot.location.coordinates[0],
-        };
-
-        const timeToPickup = await getETA(volunteerLocation, donorLocation);
-        const timeToDeliver = await getETA(donorLocation, spotLocation);
-        const totalTime = timeToPickup + timeToDeliver + 5; 
-
-        if (totalTime <= 45) {
-          eligibleMatches.push({
-            volunteer: vol,
-            hungerSpot: spot,
-            totalTime: totalTime,
-            capacity: spot.capacity,
-          });
-        }
-      }
-    }
-
-    // Sort eligible matches: primary by totalTime (ascending), secondary by hungerSpot capacity (descending)
-    eligibleMatches.sort((a, b) => {
-      if (a.totalTime !== b.totalTime) {
-        return a.totalTime - b.totalTime;
-      }
-      return b.capacity - a.capacity;
-    });
-
-    const bestMatch = eligibleMatches.length > 0 ? eligibleMatches[0] : null;
-    if (!bestMatch) {
-  return res.status(200).json({
-    message: 'We could not assign any volunteer currently. Your request is pending. Please wait or try again later.',
-    status: 'pending'
-  });
-}
-
+    // ✅ Create donation request
     const donation = new DonationRequest({
-      donorId: req.user._id,
+      donorName,
+      donorPhone,
       foodDescription,
       quantity,
       type,
@@ -107,61 +43,45 @@ exports.createDonation = async (req, res) => {
       preferredPickupTime,
       expiryTime,
       images,
-      status: 'pending',
-      donorName,
-      donorPhone,
+      status: availableVolunteer ? 'accepted' : 'pending',
+      assignedVolunteer: availableVolunteer?._id || null,
     });
 
-    if (bestMatch) {
-      donation.assignedVolunteer = bestMatch.volunteer._id;
-      donation.deliveredTo = bestMatch.hungerSpot._id;
-      donation.status = 'accepted';
+    const savedDonation = await donation.save();
+
+    // ✅ Mark volunteer unavailable and log assignment
+    if (availableVolunteer) {
+      availableVolunteer.available = false;
+      await availableVolunteer.save();
 
       const assignment = new VolunteerAssignmentLog({
-        volunteerId: bestMatch.volunteer._id,
-        donationId: donation._id,
+        volunteerId: availableVolunteer._id,
+        donationId: savedDonation._id,
         statusTimeline: { acceptedAt: new Date() },
       });
+
       await assignment.save();
     }
 
-    const createdDonation = await donation.save();
-    res.status(201).json(createdDonation);
+    // ✅ Send response
+    res.status(201).json({
+      message: availableVolunteer
+        ? 'Donation created and volunteer assigned.'
+        : 'Donation created. No volunteer available now.',
+      status: donation.status,
+      volunteer: availableVolunteer
+        ? {
+            name: availableVolunteer.name,
+            phone: availableVolunteer.phone,
+          }
+        : null,
+    });
   } catch (error) {
     console.error('Error creating donation:', error);
     res.status(500).json({ message: 'Server Error' });
   }
 };
 
-exports.getMyDonations = async (req, res) => {
-  try {
-    const donations = await DonationRequest.find({ donorId: req.user._id });
-    res.json(donations);
-  } catch (error) {
-    res.status(500).json({ message: 'Server Error' });
-  }
-};
-
-exports.cancelDonation = async (req, res) => {
-  try {
-    const donation = await DonationRequest.findById(req.params.id);
-
-    if (!donation) {
-      return res.status(404).json({ message: 'Donation not found' });
-    }
-
-    if (donation.donorId.toString() !== req.user._id.toString()) {
-      return res.status(401).json({ message: 'Not authorized' });
-    }
-
-    donation.status = 'cancelled';
-    await donation.save();
-
-    res.json({ message: 'Donation cancelled' });
-  } catch (error) {
-    res.status(500).json({ message: 'Server Error' });
-  }
-};
 
 exports.getDonationById = async (req, res) => {
   try {

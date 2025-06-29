@@ -1,118 +1,100 @@
 import React, { useState } from "react";
-import { registerUser } from '../apiService';
+import { registerDonor } from '../apiService';
 import { useNavigate } from 'react-router-dom';
 
-export default function Register() {
+export default function DonorRegisterForm() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
     email: "",
     password: "",
     confirmPassword: "",
-    dob: "",
     address: "",
-    hasVan: "",
-    license: null,
+    latitude: "",
+    longitude: "",
   });
 
   const [errors, setErrors] = useState({});
   const [loadingLocation, setLoadingLocation] = useState(false);
 
   const handleChange = (e) => {
-    const { name, value, files } = e.target;
-    if (name === "license") {
-      setFormData((prev) => ({ ...prev, license: files[0] }));
-    } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
-    }
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleUseCurrentLocation = () => {
-  setLoadingLocation(true);
+    setLoadingLocation(true);
 
-  if (!navigator.geolocation) {
-    alert("Geolocation is not supported by this browser.");
-    setLoadingLocation(false);
-    return;
-  }
-
-  navigator.geolocation.getCurrentPosition(
-    async (position) => {
-      const { latitude, longitude } = position.coords;
-
-      try {
-        const response = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`,
-          {
-            headers: {
-              "Accept-Language": "en",
-              "User-Agent": "Volunteer-App", // Some APIs require this
-            },
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch data from OpenStreetMap.");
-        }
-
-        // Optional: validate response
-        const data = await response.json();
-        if (!data.lat || !data.lon) {
-          throw new Error("OpenStreetMap API did not return valid coordinates.");
-        }
-
-        setFormData((prev) => ({
-          ...prev,
-          latitude: data.lat,
-          longitude: data.lon,
-          address: data.display_name, // Store a more readable address
-        }));
-      } catch (error) {
-        alert("Failed to get location data from OpenStreetMap.");
-        console.error(error);
-      } finally {
-        setLoadingLocation(false);
-      }
-    },
-    (error) => {
-      switch (error.code) {
-        case error.PERMISSION_DENIED:
-          alert("Permission denied. Please allow location access.");
-          break;
-        case error.POSITION_UNAVAILABLE:
-          alert("Location information is unavailable.");
-          break;
-        case error.TIMEOUT:
-          alert("The request to get your location timed out.");
-          break;
-        default:
-          alert("An unknown error occurred while fetching location.");
-      }
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by this browser.");
       setLoadingLocation(false);
-    },
-    {
-      enableHighAccuracy: true,
-      timeout: 10000,
-      maximumAge: 0,
+      return;
     }
-  );
-};
 
-  const getAge = (dob) => {
-    const birthDate = new Date(dob);
-    const today = new Date();
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const m = today.getMonth() - birthDate.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-    return age;
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`,
+            {
+              headers: {
+                "Accept-Language": "en",
+                "User-Agent": "Volunteer-App", // Some APIs require this
+              },
+            }
+          );
+
+          if (!response.ok) {
+            throw new Error("Failed to fetch data from OpenStreetMap.");
+          }
+
+          const data = await response.json();
+          if (!data.lat || !data.lon) {
+            throw new Error("OpenStreetMap API did not return valid coordinates.");
+          }
+
+          setFormData((prev) => ({
+            ...prev,
+            latitude: data.lat,
+            longitude: data.lon,
+            address: data.display_name, // Store a more readable address
+          }));
+        } catch (error) {
+          alert("Failed to get location data from OpenStreetMap.");
+          console.error(error);
+        } finally {
+          setLoadingLocation(false);
+        }
+      },
+      (error) => {
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            alert("Permission denied. Please allow location access.");
+            break;
+          case error.POSITION_UNAVAILABLE:
+            alert("Location information is unavailable.");
+            break;
+          case error.TIMEOUT:
+            alert("The request to get your location timed out.");
+            break;
+          default:
+            alert("An unknown error occurred while fetching location.");
+        }
+        setLoadingLocation(false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      }
+    );
   };
 
   const validate = () => {
     const newErrors = {};
-    const age = getAge(formData.dob);
-    if (age < 18) newErrors.dob = "Must be 18 or older";
     if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = "Passwords do not match";
     }
@@ -124,23 +106,24 @@ export default function Register() {
     e.preventDefault();
     if (!validate()) return;
 
-    const { latitude, longitude } = formData;
+    const { name, email, phone, password, address, latitude, longitude } = formData;
 
     try {
-      const { data } = await registerUser({
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
-        password: formData.password,
+      const { data } = await registerDonor({
+        name,
+        email,
+        phone,
+        password,
+        address,
         latitude,
         longitude,
       });
-      alert("Thank you for registering as a volunteer! 🚐");
+      alert("Thank you for registering as a donor! 🤝");
       console.log(data);
-      navigate('/dashboard');
+      navigate('/dashboard'); // Redirect to dashboard after successful registration
     } catch (error) {
-      console.error('Error during registration:', error);
-      alert(error.response?.data?.error || 'An error occurred during registration');
+      console.error('Error during donor registration:', error);
+      alert(error.response?.data?.error || 'An error occurred during donor registration');
     }
   };
 
@@ -150,7 +133,7 @@ export default function Register() {
         onSubmit={handleSubmit}
         className="bg-white shadow-lg rounded-xl px-8 py-8 max-w-lg w-full font-poppins"
       >
-        <h2 className="mb-4 text-2xl font-bold text-center text-gray-800">🙋 Volunteer Registration</h2>
+        <h2 className="mb-4 text-2xl font-bold text-center text-gray-800">🤝 Donor Registration</h2>
 
         <div className="flex flex-col gap-4">
           <input
@@ -161,7 +144,6 @@ export default function Register() {
             placeholder="Full Name"
             required
             className="w-full px-4 py-3 border border-purple-200 rounded-lg outline-none focus:ring-2 focus:ring-purple-400 transition"
-
           />
 
           <input
@@ -172,7 +154,6 @@ export default function Register() {
             placeholder="Phone Number"
             required
             className="w-full px-4 py-3 border border-purple-200 rounded-lg outline-none focus:ring-2 focus:ring-purple-400 transition"
-
           />
 
           <input
@@ -182,8 +163,7 @@ export default function Register() {
             onChange={handleChange}
             placeholder="Email Address"
             required
-           className="w-full px-4 py-3 border border-purple-200 rounded-lg outline-none focus:ring-2 focus:ring-purple-400 transition"
-
+            className="w-full px-4 py-3 border border-purple-200 rounded-lg outline-none focus:ring-2 focus:ring-purple-400 transition"
           />
 
           <input
@@ -194,7 +174,6 @@ export default function Register() {
             placeholder="Password"
             required
             className="w-full px-4 py-3 border border-purple-200 rounded-lg outline-none focus:ring-2 focus:ring-purple-400 transition"
-
           />
 
           <input
@@ -205,25 +184,10 @@ export default function Register() {
             placeholder="Confirm Password"
             required
             className="w-full px-4 py-3 border border-purple-200 rounded-lg outline-none focus:ring-2 focus:ring-purple-400 transition"
-
           />
           {errors.confirmPassword && (
             <p className="text-red-500 text-sm">{errors.confirmPassword}</p>
           )}
-
-          <div>
-            <label className="block text-sm font-medium mb-1">Date of Birth</label>
-            <input
-              type="date"
-              name="dob"
-              value={formData.dob}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-3 border border-purple-200 rounded-lg outline-none focus:ring-2 focus:ring-purple-400 transition"
-
-            />
-            {errors.dob && <p className="text-red-500 text-sm">{errors.dob}</p>}
-          </div>
 
           <div>
             <label className="block text-sm font-medium mb-1">Address</label>
@@ -236,7 +200,6 @@ export default function Register() {
                 required
                 rows="2"
                 className="w-full px-4 py-3 border border-purple-200 rounded-lg outline-none focus:ring-2 focus:ring-purple-400 transition"
-
               />
               <button
                 type="button"
@@ -253,15 +216,11 @@ export default function Register() {
             </div>
           </div>
 
-          
-
-          
-
           <button
             type="submit"
             className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 font-medium mt-2"
           >
-            Register as Volunteer
+            Register as Donor
           </button>
         </div>
       </form>

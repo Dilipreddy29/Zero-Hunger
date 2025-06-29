@@ -10,11 +10,9 @@ export default function LandingPage() {
       {/* Navbar - Full Width */}
       <header className="bg-white shadow w-full">
         <div className="flex justify-between items-center w-full px-16 py-5">
-          <h1 className="text-2xl font-bold text-blue-600">🚐 VolunteerConnect</h1>
+          <h1 className="text-2xl font-bold text-blue-600">🚐 No Food Waste</h1>
           <nav className="space-x-10 text-base font-medium">
-            <a href="/tasks" className="hover:text-blue-600">Tasks</a>
             <a href="/login" className="hover:text-blue-600">Login</a>
-            <a href="/dashboard" className="hover:text-blue-600">Volunteer Dashboard</a>
             <a href="/register" className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">Register</a>
           </nav>
         </div>

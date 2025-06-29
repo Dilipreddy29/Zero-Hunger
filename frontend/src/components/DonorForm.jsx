@@ -1,13 +1,14 @@
 import React, { useState } from "react";
+import { createDonation } from '../apiService';
 
 export default function DonorForm() {
   const [formData, setFormData] = useState({
     donorName: "",
-    description: "",
+    foodDescription: "", // Changed from description
     quantity: "",
     contactPhone: "",
-    location: "", // Combined lat & long
-    address: "",  // <-- Added address field
+    location: "", // Will be converted to { type: 'Point', coordinates: [lng, lat] }
+    pickupAddress: "",  // Changed from address
   });
 
   const [status] = useState("pending");
@@ -45,38 +46,57 @@ export default function DonorForm() {
             address: data.display_name || `${lat}, ${lng}`,
             location: `${lat}, ${lng}`,
           }));
-        } catch (err) {
+        } catch (_err) {
           alert("Could not fetch address from location.");
         } finally {
           setLoadingLocation(false);
         }
       },
-      (err) => {
+      (_error) => {
         alert("⚠️ Could not fetch location. Please allow location access.");
         setLoadingLocation(false);
       }
     );
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Fetch location before submitting
+    
+
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
+      async (pos) => {
         const lat = pos.coords.latitude.toFixed(6);
         const lng = pos.coords.longitude.toFixed(6);
-        const fullLocation = `${lat}, ${lng}`;
         const donationData = {
           ...formData,
-          location: fullLocation,
+          location: {
+            type: 'Point',
+            coordinates: [parseFloat(lng), parseFloat(lat)], // Backend expects [lng, lat]
+          },
           status,
-          volunteerId: null,
+          volunteerId: null, // This will be assigned by the backend
+          type: 'cooked', // Defaulting to 'cooked' as it's a required field in backend
+          preferredPickupTime: new Date().toISOString(), // Placeholder
+          expiryTime: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(), // Placeholder: 2 hours from now
+          images: [], // Placeholder
         };
-        console.log("📦 Donation Submitted:", donationData);
-        alert("Donation submitted successfully!");
+
+        try {
+          const response = await createDonation(donationData);
+          const { message, volunteerName, volunteerPhone } = response.data;
+
+          if (volunteerName && volunteerPhone) {
+            alert(`Order is placed. Volunteer: ${volunteerName}, Phone: ${volunteerPhone}. We will update you when the volunteer reaches you.`);
+          } else {
+            alert(message);
+          }
+        } catch (error) {
+          console.error('Error submitting donation:', error);
+          alert(error.response?.data?.error || 'An error occurred while submitting your donation.');
+        }
       },
-      (err) => {
-        console.error(err);
+      (error) => {
+        console.error(error);
         alert("⚠️ Could not fetch location. Please allow location access.");
       }
     );
@@ -84,13 +104,13 @@ export default function DonorForm() {
 
   return (
     <div className="min-h-screen bg-[#FFF8F0] text-[#4E342E] font-sans p-6">
-      <header className="bg-[#F57C00] text-white py-4 px-6 shadow-md">
+      <header className="bg-[#0041f5] text-white py-4 px-6 shadow-md">
         <h1 className="text-2xl font-bold">Food Donation</h1>
       </header>
 
       <div className="max-w-3xl mx-auto bg-white mt-8 p-6 rounded shadow">
         <form onSubmit={handleSubmit} className="grid gap-5">
-          <h2 className="text-xl font-bold text-[#FB8C00] mb-1 text-center">Donor Information</h2>
+          <h2 className="text-xl font-bold text-[#0069fb] mb-1 text-center">Donor Information</h2>
 
           <div>
             <label className="block text-sm font-medium mb-1">Your Name</label>
@@ -116,13 +136,13 @@ export default function DonorForm() {
             />
           </div>
 
-          <h2 className="text-xl font-bold text-[#FB8C00] mt-2 text-center">Donation Details</h2>
+          <h2 className="text-xl font-bold text-[#007dfb] mt-2 text-center">Donation Details</h2>
 
           <div>
             <label className="block text-sm font-medium mb-1">Food Description</label>
             <textarea
-              name="description"
-              value={formData.description}
+              name="foodDescription"
+              value={formData.foodDescription}
               onChange={handleChange}
               placeholder="Describe the food (e.g. Veg Biryani, Dal)"
               className="border p-2 rounded w-full"
@@ -160,8 +180,8 @@ export default function DonorForm() {
             <label className="block text-sm font-medium mb-1">Address</label>
             <div className="flex gap-2">
               <textarea
-                name="address"
-                value={formData.address}
+                name="pickupAddress"
+                value={formData.pickupAddress}
                 onChange={handleChange}
                 placeholder="Address"
                 required
@@ -185,7 +205,7 @@ export default function DonorForm() {
 
           <button
             type="submit"
-            className="mt-6 bg-[#FB8C00] text-white px-6 py-2 rounded hover:bg-[#FFB300]"
+            className="mt-6 bg-[#0075fb] text-white px-6 py-2 rounded hover:bg-[#759bd4]"
           >
             Submit Donation
           </button>

@@ -1,11 +1,9 @@
 import { useState } from 'react';
-import Button from '@mui/material/Button';
-import TextField from '@mui/material/TextField';
-import { Link } from 'react-router-dom'; // Import Link
-
-const BACKEND_URL = 'http://localhost:5000/api/login';
+import { Link, useNavigate } from 'react-router-dom'; // Import Link and useNavigate
+import { loginUser } from '../apiService'; // Import loginUser
 
 const LoginForm = () => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   let googleicon = "https://img.icons8.com/color/48/000000/google-logo.png";
@@ -14,36 +12,25 @@ const LoginForm = () => {
     e.preventDefault();
 
     try {
-      const response = await fetch(BACKEND_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await response.json();
-      if (response.ok) {
-        alert("Login successful!");
-        localStorage.setItem('role', data.role);
-        if (data.token) {
-          localStorage.setItem('token', data.token);
-        }
-
-        if (data.role === 'admin') {
-          window.location.href = '/admin-dashboard';
-        } else if (data.role === 'ngo') {
-          window.location.href = '/ngo-dashboard';
-        } else {
-          window.location.href = '/';
-        }
-
-      } else {
-        alert(data.message || 'Login failed');
+      const { data } = await loginUser({ email, password });
+      
+      alert("Login successful!");
+      localStorage.setItem('user', JSON.stringify(data)); // Store the entire user data
+      if (data.token) {
+        localStorage.setItem('token', data.token);
       }
+
+      if (data.role === 'admin') {
+        window.location.href = '/admin-dashboard';
+      } else if (data.role === 'ngo') {
+        window.location.href = '/ngo-dashboard';
+      } else {
+        navigate('/dashboard');
+      }
+
     } catch (error) {
       console.error('Error during login:', error);
-      alert('An error occurred while logging in');
+      alert(error.response?.data?.error || 'An error occurred while logging in');
     }
   };
 

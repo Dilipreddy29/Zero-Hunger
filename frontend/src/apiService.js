@@ -9,17 +9,13 @@ const apiService = axios.create({
   },
 });
 
-// Auth Endpoints
 export const registerUser = (userData) => apiService.post('/auth/register', userData);
 export const loginUser = (userData) => apiService.post('/auth/login', userData);
+export const registerDonor = (userData) => apiService.post('/auth/register-donor', userData);
 
 // Donation Endpoints
-export const createDonation = (donationData, token) => {
-  return apiService.post('/donations', donationData, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+export const createDonation = (donationData) => {
+  return apiService.post('/donations', donationData);
 };
 export const getMyDonations = (token) => {
   return apiService.get('/donations/my', {

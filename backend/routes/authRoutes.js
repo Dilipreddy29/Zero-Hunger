@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const passport = require('passport');
-const { registerVolunteer, loginUser } = require('../controllers/authController');
+const { registerVolunteer, registerDonor, loginUser } = require('../controllers/authController');
 
 router.post('/register', registerVolunteer);
+router.post('/register-donor', registerDonor);
 
 router.post('/login', loginUser);
 

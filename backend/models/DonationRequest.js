@@ -3,6 +3,8 @@ const { Schema } = mongoose;
 
 const DonationRequestSchema = new Schema({
   donorId: { type: Schema.Types.ObjectId, ref: 'User' },
+
+  donorName: { type: String, required: true },      
   donorPhone: { type: String, required: true },      
 
   foodDescription: String,       
@@ -26,6 +28,7 @@ const DonationRequestSchema = new Schema({
   expiryTime: Date,
   images: [String],              
 
+  
   status: {
     type: String,
     enum: ['pending', 'accepted', 'picked', 'delivered', 'cancelled'],
